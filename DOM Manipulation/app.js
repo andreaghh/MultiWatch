@@ -234,18 +234,34 @@ document.addEventListener("DOMContentLoaded", function () {
         setCountdownBtn.addEventListener('click', function () {
             const input = countdownInput.value.trim();
             if (!input) return;
-            
+
+            // Confirm if laps should be kept before setting countdown
+            let keepLaps = true;
+            if (stopwatch.laps.length > 0) {
+                keepLaps = confirm('Do you want to keep the laps?\nIf you choose Cancel, laps will be removed.');
+            }
+
             const timeMs = parseTimeInput(input);
             if (timeMs === null) {
                 alert('Please enter time in MM:SS format (e.g., 02:30)');
                 return;
             }
-            
+
             stopwatch.setCountdown(timeMs);
             timerDisplay.textContent = stopwatch.getCurrentDisplay();
             startPauseBtn.textContent = 'Start';
             startPauseBtn.classList.remove('pause');
-            lapsList.innerHTML = '';
+            if (!keepLaps) {
+                lapsList.innerHTML = '';
+            } else {
+                // If keeping laps, restore them visually
+                lapsList.innerHTML = '';
+                stopwatch.laps.forEach((lapTime, idx) => {
+                    const lapItem = document.createElement('li');
+                    lapItem.textContent = `${idx + 1}) ${stopwatch.toMMSSmmm(lapTime)}`;
+                    lapsList.appendChild(lapItem);
+                });
+            }
             card.classList.remove('countdown-finished');
             countdownInput.value = '';
         });
