@@ -78,6 +78,28 @@ h1 {
   border-radius: 16px;
 }
 
+/* Add Timer button */
+#add-timer {
+  background: var(--bg);
+  color: var(--ink);
+  border: none;
+  padding: 12px 24px;
+  border-radius: 14px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin: 12px 0 26px;
+  box-shadow: var(--elevated);
+  transition: transform 120ms ease, box-shadow 120ms ease, filter 120ms ease;
+}
+#add-timer:hover   { filter: brightness(1.05); }
+#add-timer:active  { box-shadow: var(--pressed); }
+#add-timer:focus-visible {
+  outline: 2px solid var(--outline);
+  outline-offset: 4px;
+  border-radius: 16px;
+}
+
 /* Container */
 #container {
   width: 100%;
@@ -301,12 +323,6 @@ h1 {
 
 .laps li:last-child {
   border-bottom: none;
-}
-
-.countdown-finished .laps {
-  background: rgba(255, 255, 255, 0.1);
-  box-shadow: inset 6px 6px 12px rgba(0,0,0,0.1),
-              inset -6px -6px 12px rgba(255,255,255,0.1);
 }
 
 .countdown-finished .laps li {
