@@ -104,7 +104,8 @@ class StopwatchModel {
 
 document.addEventListener("DOMContentLoaded", function () {
     const body = document.querySelector('body');
-    const addButton = document.getElementById('add-stopwatch');
+    const addStopwatchBtn = document.getElementById('add-stopwatch');
+    const addTimerBtn = document.getElementById('add-timer');
     const container = document.getElementById('container');
 
     function parseTimeInput(input) {
@@ -123,80 +124,46 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function createStopwatch() {
         const stopwatch = new StopwatchModel();
-
         // Stopwatch card
         const card = document.createElement('div');
         card.className = 'stopwatch-box';
-
         // Create timer display
         const timerDisplay = document.createElement('time');
         timerDisplay.className = 'time-display';
         timerDisplay.setAttribute('role', 'timer');
         timerDisplay.textContent = stopwatch.getCurrentDisplay();
         card.appendChild(timerDisplay);
-
         // Control buttons
         const controlsDiv = document.createElement('div');
         controlsDiv.className = 'controls';
-
         // Start/Pause button
         const startPauseBtn = document.createElement('button');
         startPauseBtn.className = 'start-pause';
         startPauseBtn.textContent = 'Start';
         controlsDiv.appendChild(startPauseBtn);
-
         // Lap button
         const lapBtn = document.createElement('button');
         lapBtn.className = 'lap';
         lapBtn.textContent = 'Lap';
         controlsDiv.appendChild(lapBtn);
-
         // Reset button
         const resetBtn = document.createElement('button');
         resetBtn.className = 'reset';
         resetBtn.textContent = 'Reset';
         controlsDiv.appendChild(resetBtn);
-
         // Delete button
         const deleteBtn = document.createElement('button');
         deleteBtn.className = 'delete';
         deleteBtn.textContent = 'Delete';
         controlsDiv.appendChild(deleteBtn);
-
         card.appendChild(controlsDiv);
-
-        // Countdown section
-        const countdownDiv = document.createElement('div');
-        countdownDiv.className = 'countdown-section';
-
-        const countdownInput = document.createElement('input');
-        countdownInput.className = 'countdown-input';
-        countdownInput.placeholder = 'MM:SS';
-        countdownInput.maxLength = 5;
-        countdownDiv.appendChild(countdownInput);
-
-        const setCountdownBtn = document.createElement('button');
-        setCountdownBtn.className = 'set-countdown';
-        setCountdownBtn.textContent = 'Set Countdown';
-        countdownDiv.appendChild(setCountdownBtn);
-
-        card.appendChild(countdownDiv);
-
-        // Time's up message
-        const timeUpMsg = document.createElement('div');
-        timeUpMsg.className = 'time-up-message';
-        timeUpMsg.textContent = '⏰ TIME\'S UP!';
-        card.appendChild(timeUpMsg);
-
         // Laps list
         const lapsList = document.createElement('ul');
         lapsList.className = 'laps';
         card.appendChild(lapsList);
-
         // Event listeners
         startPauseBtn.addEventListener('click', function () {
             if (stopwatch.isFinished) return;
-            
             if (stopwatch.intervalId) {
                 stopwatch.pause();
                 startPauseBtn.textContent = 'Start';
@@ -207,17 +174,14 @@ document.addEventListener("DOMContentLoaded", function () {
                 startPauseBtn.classList.add('pause');
             }
         });
-
         lapBtn.addEventListener('click', function () {
             if (stopwatch.timeElapsed === 0 && !stopwatch.intervalId) return;
-            
             const lapTime = stopwatch.recordLap();
             const lapItem = document.createElement('li');
             lapItem.textContent = `${stopwatch.laps.length}) ${stopwatch.toMMSSmmm(lapTime)}`;
             lapsList.appendChild(lapItem);
             lapsList.scrollTop = lapsList.scrollHeight;
         });
-
         resetBtn.addEventListener('click', function () {
             stopwatch.reset();
             timerDisplay.textContent = stopwatch.getCurrentDisplay();
@@ -226,47 +190,112 @@ document.addEventListener("DOMContentLoaded", function () {
             lapsList.innerHTML = '';
             card.classList.remove('countdown-finished');
         });
-
         deleteBtn.addEventListener('click', () => {
             stopwatch.delete(card);
         });
+        // Update display during timer
+        const originalStart = stopwatch.start;
+        stopwatch.start = function() {
+            originalStart.call(this);
+            const updateInterval = setInterval(() => {
+                if (!this.intervalId) {
+                    clearInterval(updateInterval);
+                    return;
+                }
+                timerDisplay.textContent = this.getCurrentDisplay();
+            }, 16);
+        };
+        container.appendChild(card);
+    }
 
+    // (No duplicate createTimer function)
+    function createTimer() {
+        const stopwatch = new StopwatchModel();
+        stopwatch.isCountdown = true;
+        // Timer card
+        const card = document.createElement('div');
+        card.className = 'stopwatch-box';
+        // Create timer display
+        const timerDisplay = document.createElement('time');
+        timerDisplay.className = 'time-display';
+        timerDisplay.setAttribute('role', 'timer');
+        timerDisplay.textContent = stopwatch.getCurrentDisplay();
+        card.appendChild(timerDisplay);
+        // Control buttons
+        const controlsDiv = document.createElement('div');
+        controlsDiv.className = 'controls';
+        // Start/Pause button
+        const startPauseBtn = document.createElement('button');
+        startPauseBtn.className = 'start-pause';
+        startPauseBtn.textContent = 'Start';
+        controlsDiv.appendChild(startPauseBtn);
+        // Reset button
+        const resetBtn = document.createElement('button');
+        resetBtn.className = 'reset';
+        resetBtn.textContent = 'Reset';
+        controlsDiv.appendChild(resetBtn);
+        // Delete button
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'delete';
+        deleteBtn.textContent = 'Delete';
+        controlsDiv.appendChild(deleteBtn);
+        card.appendChild(controlsDiv);
+        // Countdown section
+        const countdownDiv = document.createElement('div');
+        countdownDiv.className = 'countdown-section';
+        const countdownInput = document.createElement('input');
+        countdownInput.className = 'countdown-input';
+        countdownInput.placeholder = 'MM:SS';
+        countdownInput.maxLength = 5;
+        countdownDiv.appendChild(countdownInput);
+        const setCountdownBtn = document.createElement('button');
+        setCountdownBtn.className = 'set-countdown';
+        setCountdownBtn.textContent = 'Set Countdown';
+        countdownDiv.appendChild(setCountdownBtn);
+        card.appendChild(countdownDiv);
+        // Time's up message
+        const timeUpMsg = document.createElement('div');
+        timeUpMsg.className = 'time-up-message';
+        timeUpMsg.textContent = '⏰ TIME\'S UP!';
+        card.appendChild(timeUpMsg);
+        // Event listeners
+        startPauseBtn.addEventListener('click', function () {
+            if (stopwatch.isFinished) return;
+            if (stopwatch.intervalId) {
+                stopwatch.pause();
+                startPauseBtn.textContent = 'Start';
+                startPauseBtn.classList.remove('pause');
+            } else {
+                stopwatch.start();
+                startPauseBtn.textContent = 'Pause';
+                startPauseBtn.classList.add('pause');
+            }
+        });
+        resetBtn.addEventListener('click', function () {
+            stopwatch.reset();
+            timerDisplay.textContent = stopwatch.getCurrentDisplay();
+            startPauseBtn.textContent = 'Start';
+            startPauseBtn.classList.remove('pause');
+            card.classList.remove('countdown-finished');
+        });
+        deleteBtn.addEventListener('click', () => {
+            stopwatch.delete(card);
+        });
         setCountdownBtn.addEventListener('click', function () {
             const input = countdownInput.value.trim();
             if (!input) return;
-
-            // Confirm if laps should be kept before setting countdown
-            let keepLaps = true;
-            if (stopwatch.laps.length > 0) {
-                keepLaps = confirm('Do you want to keep the laps?\nIf you choose Cancel, laps will be removed.');
-            }
-
             const timeMs = parseTimeInput(input);
             if (timeMs === null) {
                 alert('Please enter time in MM:SS format (e.g., 02:30)');
                 return;
             }
-
             stopwatch.setCountdown(timeMs);
             timerDisplay.textContent = stopwatch.getCurrentDisplay();
             startPauseBtn.textContent = 'Start';
             startPauseBtn.classList.remove('pause');
-            if (!keepLaps) {
-                lapsList.innerHTML = '';
-            } else {
-                // If keeping laps, restore them visually
-                lapsList.innerHTML = '';
-                stopwatch.laps.forEach((lapTime, idx) => {
-                    const lapItem = document.createElement('li');
-                    lapItem.textContent = `${idx + 1}) ${stopwatch.toMMSSmmm(lapTime)}`;
-                    lapsList.appendChild(lapItem);
-                });
-            }
             card.classList.remove('countdown-finished');
             countdownInput.value = '';
         });
-
-        // Format countdown input as user types
         countdownInput.addEventListener('input', function (e) {
             let value = e.target.value.replace(/[^\d]/g, '');
             if (value.length > 0) {
@@ -278,27 +307,21 @@ document.addEventListener("DOMContentLoaded", function () {
             }
             e.target.value = value;
         });
-
         // Update display during timer
         const originalStart = stopwatch.start;
         stopwatch.start = function() {
             originalStart.call(this);
-            
             const updateInterval = setInterval(() => {
                 if (!this.intervalId) {
                     clearInterval(updateInterval);
                     return;
                 }
-                
                 timerDisplay.textContent = this.getCurrentDisplay();
-                
                 if (this.isCountdown && this.isFinished) {
                     card.classList.add('countdown-finished');
                     startPauseBtn.textContent = 'Start';
                     startPauseBtn.classList.remove('pause');
                     clearInterval(updateInterval);
-                    
-                    // Flash effect
                     let flashes = 0;
                     const flashInterval = setInterval(() => {
                         card.style.transform = flashes % 2 === 0 ? 'scale(1.02)' : 'scale(1)';
@@ -311,13 +334,12 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
             }, 16);
         };
-
         container.appendChild(card);
     }
 
-    // Add new stopwatch on button click
-    addButton.addEventListener('click', createStopwatch);
-
+    // Add new stopwatch or timer on button click
+    addStopwatchBtn.addEventListener('click', createStopwatch);
+    addTimerBtn.addEventListener('click', createTimer);
     // Create one stopwatch by default
     createStopwatch();
 });
