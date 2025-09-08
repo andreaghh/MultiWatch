@@ -105,7 +105,7 @@ class StopwatchModel {
 
     delete(cardElement) {
         this.pause();
-        if (confirm('Are you sure you want to delete this stopwatch?')) {
+        if (confirm('Are you sure you want to delete this?')) {
             cardElement.remove();
         }
     }
@@ -264,7 +264,7 @@ document.addEventListener("DOMContentLoaded", function () {
         // Time's up message
         const timeUpMsg = document.createElement('div');
         timeUpMsg.className = 'time-up-message';
-        timeUpMsg.textContent = '⏰ TIME\'S UP!';
+        timeUpMsg.textContent = 'TIME\'S UP!';
         card.appendChild(timeUpMsg);
 
         // Set up the timer finished callback
