@@ -270,8 +270,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
         // Set up the timer finished callback
         stopwatch.onTimerFinished = function() {
-            // Show alert when timer finishes
-            alert('Timer finished!');
             // Update button text and state
             startPauseBtn.textContent = 'Start';
             startPauseBtn.classList.remove('pause');
