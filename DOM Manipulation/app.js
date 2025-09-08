@@ -88,14 +88,15 @@ class StopwatchModel {
     }
 
     getCurrentDisplay() {
+        if (this.isCountdown && this.isFinished) {
+            return "00:00.000";
+        }
         if (this.isCountdown && !this.isFinished) {
             const remaining = this.countdownStartTime - this.timeElapsed;
             return this.toMMSSmmm(Math.max(0, remaining));
         }
-        if (this.isCountdown && this.isFinished) {
-            return "00:00.000";
-        }
-        return this.toMMSSmmm();
+        // Default display for non-countdown mode
+        return "00:00.000";
     }
 
     finish() {
@@ -360,22 +361,10 @@ document.addEventListener("DOMContentLoaded", function () {
         stopwatch.start = function() {
             originalStart.call(this);
             const updateInterval = setInterval(() => {
+                timerDisplay.textContent = this.getCurrentDisplay();
                 if (!this.intervalId) {
                     clearInterval(updateInterval);
                     return;
-                }
-                timerDisplay.textContent = this.getCurrentDisplay();
-                if (this.isCountdown && this.isFinished) {
-                    clearInterval(updateInterval);
-                    let flashes = 0;
-                    const flashInterval = setInterval(() => {
-                        card.style.transform = flashes % 2 === 0 ? 'scale(1.02)' : 'scale(1)';
-                        flashes++;
-                        if (flashes > 6) {
-                            clearInterval(flashInterval);
-                            card.style.transform = '';
-                        }
-                    }, 200);
                 }
             }, 16);
         };
