@@ -12,6 +12,7 @@ class StopwatchModel {
         this.isCountdown = false;
         this.countdownStartTime = 0;
         this.isFinished = false;
+        this.onTimerFinished = null; // Callback for when timer finishes
     }
 
     // Format time to MM:SS.mmm as required
@@ -28,19 +29,27 @@ class StopwatchModel {
         if (this.intervalId) return;
         
         this.startTime = Date.now() - this.timeElapsed;
+        this.isFinished = false;
         this.intervalId = setInterval(() => {
             if (this.isCountdown) {
-                const remaining = this.countdownStartTime - (Date.now() - this.startTime);
+                const elapsed = Date.now() - this.startTime;
+                const remaining = this.countdownStartTime - elapsed;
                 if (remaining <= 0) {
                     this.timeElapsed = this.countdownStartTime;
-                    this.finish();
+                    this.isFinished = true;
+                    clearInterval(this.intervalId);
+                    this.intervalId = null;
+                    // Call the finish callback if it exists
+                    if (this.onTimerFinished) {
+                        this.onTimerFinished();
+                    }
                     return;
                 }
-                this.timeElapsed = Date.now() - this.startTime;
+                this.timeElapsed = elapsed;
             } else {
                 this.timeElapsed = Date.now() - this.startTime;
             }
-        }, 16); // ~60fps for smooth updates
+        }, 16);
     }
 
     pause() {
@@ -208,10 +217,9 @@ document.addEventListener("DOMContentLoaded", function () {
         container.appendChild(card);
     }
 
-    // (No duplicate createTimer function)
     function createTimer() {
         const stopwatch = new StopwatchModel();
-        stopwatch.isCountdown = true;
+        
         // Timer card
         const card = document.createElement('div');
         card.className = 'stopwatch-box';
@@ -258,19 +266,41 @@ document.addEventListener("DOMContentLoaded", function () {
         timeUpMsg.className = 'time-up-message';
         timeUpMsg.textContent = '⏰ TIME\'S UP!';
         card.appendChild(timeUpMsg);
+
+        // Set up the timer finished callback
+        stopwatch.onTimerFinished = function() {
+            // Show alert when timer finishes
+            alert('Timer finished!');
+            // Update button text and state
+            startPauseBtn.textContent = 'Start';
+            startPauseBtn.classList.remove('pause');
+            card.classList.add('countdown-finished');
+        };
+
         // Event listeners
         startPauseBtn.addEventListener('click', function () {
-            if (stopwatch.isFinished) return;
+            if (stopwatch.isFinished) {
+                // Allow restarting the timer if it's finished
+                stopwatch.isFinished = false;
+                card.classList.remove('countdown-finished');
+            }
+            
             if (stopwatch.intervalId) {
                 stopwatch.pause();
                 startPauseBtn.textContent = 'Start';
                 startPauseBtn.classList.remove('pause');
             } else {
+                // Prevent starting if no countdown is set
+                if (!stopwatch.isCountdown || !stopwatch.countdownStartTime || stopwatch.countdownStartTime <= 0) {
+                    alert('Please enter a countdown time before starting the timer.');
+                    return;
+                }
                 stopwatch.start();
                 startPauseBtn.textContent = 'Pause';
                 startPauseBtn.classList.add('pause');
             }
         });
+        
         resetBtn.addEventListener('click', function () {
             stopwatch.reset();
             timerDisplay.textContent = stopwatch.getCurrentDisplay();
@@ -278,24 +308,41 @@ document.addEventListener("DOMContentLoaded", function () {
             startPauseBtn.classList.remove('pause');
             card.classList.remove('countdown-finished');
         });
+        
         deleteBtn.addEventListener('click', () => {
             stopwatch.delete(card);
         });
+        
         setCountdownBtn.addEventListener('click', function () {
-            const input = countdownInput.value.trim();
-            if (!input) return;
+            let input = countdownInput.value.trim();
+            // Accept MMSS or MM:SS
+            if (/^\d{3,4}$/.test(input)) {
+                // Convert MMSS to MM:SS
+                input = input.length === 3 ? '0' + input : input;
+                input = input.substring(0,2) + ':' + input.substring(2);
+            }
+            if (!input || !/^\d{2}:\d{2}$/.test(input)) {
+                alert('Please enter time in MM:SS format (e.g., 02:30)');
+                return;
+            }
             const timeMs = parseTimeInput(input);
             if (timeMs === null) {
                 alert('Please enter time in MM:SS format (e.g., 02:30)');
                 return;
             }
             stopwatch.setCountdown(timeMs);
-            timerDisplay.textContent = stopwatch.getCurrentDisplay();
+            stopwatch.isCountdown = true;
+            stopwatch.isFinished = false;
+            // Force timer display to show the new countdown value
+            setTimeout(() => {
+                timerDisplay.textContent = stopwatch.getCurrentDisplay();
+            }, 0);
             startPauseBtn.textContent = 'Start';
             startPauseBtn.classList.remove('pause');
             card.classList.remove('countdown-finished');
             countdownInput.value = '';
         });
+        
         countdownInput.addEventListener('input', function (e) {
             let value = e.target.value.replace(/[^\d]/g, '');
             if (value.length > 0) {
@@ -307,6 +354,7 @@ document.addEventListener("DOMContentLoaded", function () {
             }
             e.target.value = value;
         });
+        
         // Update display during timer
         const originalStart = stopwatch.start;
         stopwatch.start = function() {
@@ -318,9 +366,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
                 timerDisplay.textContent = this.getCurrentDisplay();
                 if (this.isCountdown && this.isFinished) {
-                    card.classList.add('countdown-finished');
-                    startPauseBtn.textContent = 'Start';
-                    startPauseBtn.classList.remove('pause');
                     clearInterval(updateInterval);
                     let flashes = 0;
                     const flashInterval = setInterval(() => {
